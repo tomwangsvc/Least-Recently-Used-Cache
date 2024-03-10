@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sync"
 	"time"
 )
 
@@ -11,13 +12,21 @@ type Value struct {
 type Cache struct {
 	cache    map[int]Value
 	capacity int
+	mu       sync.Mutex
 }
 
-func NewCache(capacity int) Cache {
-	return Cache{cache: make(map[int]Value), capacity: capacity}
+func NewCache(capacity int) *Cache {
+	return &Cache{cache: make(map[int]Value), capacity: capacity}
 }
 
 func (c *Cache) get(key int) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.getValue(key)
+}
+
+func (c *Cache) getValue(key int) int {
 	if v, ok := c.cache[key]; ok {
 		v.Time = time.Now()
 		c.cache[key] = v
@@ -27,15 +36,18 @@ func (c *Cache) get(key int) int {
 }
 
 func (c *Cache) put(key, value int) {
-	if v := c.get(key); v == -1 && len(c.cache) == c.capacity {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if v := c.getValue(key); v == -1 && len(c.cache) == c.capacity {
 		var oldestTime time.Time
 		var keyForOldestTime int
-		i := 0
+		var flag bool
 		for k := range c.cache {
-			if i == 0 {
+			if !flag {
 				oldestTime = c.cache[k].Time
 				keyForOldestTime = k
-				i++
+				flag = true
 			}
 			if oldestTime.After(c.cache[k].Time) {
 				oldestTime = c.cache[k].Time
@@ -52,11 +64,10 @@ func (c *Cache) put(key, value int) {
 }
 
 func (c *Cache) delete(key int) int {
-	v := c.get(key)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	v := c.getValue(key)
 	delete(c.cache, key)
 	return v
-}
-
-func main() {
-
 }

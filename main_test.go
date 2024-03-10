@@ -1,10 +1,13 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func Test_cache(t *testing.T) {
 	cache := NewCache(2)
 	cache.put(1, 1)
+
 	cache.put(2, 2)
 	result1 := cache.get(1)
 	if result1 != 1 {
@@ -28,7 +31,7 @@ func Test_cache(t *testing.T) {
 	if result5 != 4 {
 		t.Errorf("test result5 %d is not 4", result3)
 	}
-	result6 :=cache.delete(3)
+	result6 := cache.delete(3)
 	if result6 != 3 {
 		t.Errorf("test result6 %d is not 3", result6)
 	}
